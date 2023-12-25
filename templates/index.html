@@ -1,1 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #e9ecef;
+    }
 
+    #container {
+      display: flex;
+      width: 100%;
+    }
+
+    #input-section {
+      width: 20%; /* Fixed width for the input section */
+      padding: 20px;
+      height: 90vh;
+      background-color: #ADD8E6; 
+      box-sizing: border-box;
+      margin-right: 10px;
+      margin-left: 10px; 
+    }
+
+    #output-section {
+      width: 80%; /* Fixed width for the output section */
+      padding: 20px;
+      height: 90vh;
+      max-height: 100vh;
+      background-color: #fff;
+      box-sizing: border-box;
+      margin-right: 10px;
+    }
+
+    #output-header {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+    
+    #output-check {
+      display: flex;
+      width: 100%;
+    }
+
+    #weave-button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background-color: #2980b9;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    #story-carousel {
+      width: 50%;
+      margin-right: 10px;
+    }
+
+    .carousel-inner {
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      height: 100%;
+    }
+    
+    #style-dropdown {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+ #age-dropdown {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+#image-container {
+    position: relative;
+    width: 50%;
+    max-height: 90vh; /* Adjusted max-height */
+    overflow: hidden;
+}
+
+#story-image, #image-placeholder {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    margin: auto;
+}
+
+#story-image {
+display: none;
+}
+
+
+    .story-page {
+      box-sizing: border-box;
+      font-size: 20px;
+      padding: 20px;
+      text-align: center;
+      font-family: 'Times New Roman', serif; /* Changed font style to resemble storybooks */
+    }
+
+    .carousel-control-prev, .carousel-control-next {
+      color: #2980b9;
+    }
+
+    .story-title {
+      font-size: 10px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    #character-input, #setting-input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+#story-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%; /* Ensure the loading container takes the full height */
+    font-size: 30px; /* Adjust the font size as needed */
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+
+
+
+.loader {
+    display: none;
+    border: 4px solid #f3f3f3; /* Light gray border */
+    border-top: 4px solid #3498db; /* Blue border for animation */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -20px; /* Half of the loader height */
+    margin-left: -20px; /* Half of the loader width */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+  </style>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const weaveButton = document.getElementById('weave-button');
+    const storyCarousel = new bootstrap.Carousel(document.getElementById('story-carousel'), { interval: false });
+    const loader = document.getElementById('loader');
+    const coverPhoto = document.getElementById('cover-photo');
+    weaveButton.addEventListener('click', function () {
+        const storyCarouselInner = document.getElementById('story-carousel-inner');
+     // Clear existing content before fetching new story
+while (storyCarouselInner.firstChild) {
+    storyCarouselInner.removeChild(storyCarouselInner.firstChild);
+}
+
+       loader.style.display = 'block';
+        
+        // Get character and setting values
+        const character = document.getElementById('character-input').value;
+        const setting = document.getElementById('setting-input').value;
+        const style = document.getElementById('style-dropdown').value; // New line
+        const age = document.getElementById('age-dropdown').value; // New line
+        // Send a POST request to the Flask server
+        fetch('/get_story', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `character=${encodeURIComponent(character)}&setting=${encodeURIComponent(setting)}&style=${encodeURIComponent(style)}&age=${encodeURIComponent(age)}`, // Updated line
+
+        })
+        .then(response => response.json())
+        .then(responseData => {
+            loader.style.display = 'none';
+           // Update title
+            const dynamicTitle = document.getElementById('dynamic-title');
+            dynamicTitle.textContent = responseData.title;
+
+
+            // Populate the story carousel with fetched content
+            responseData.story.forEach(({ Page, Content }, index) => {
+                const storyPage = document.createElement('div');
+                storyPage.classList.add('carousel-item', 'story-page');
+
+                const titleElement = document.createElement('div');
+                titleElement.classList.add('story-title');
+                titleElement.textContent = `Page ${Page}`;
+                storyPage.appendChild(titleElement);
+
+                const contentElement = document.createElement('p');
+                contentElement.textContent = Content;
+                storyPage.appendChild(contentElement);
+
+                // Set the first item as active
+                if (index === 0) {
+                    storyPage.classList.add('active');
+                }
+
+                storyCarouselInner.appendChild(storyPage);
+            });
+
+         // Display the generated image
+const storyImage = document.getElementById('story-image');
+const imagePlaceholder = document.getElementById('image-placeholder');
+
+ window.onImageLoad = function () {
+        // Hide the placeholder when the DALL-E image loads
+        imagePlaceholder.style.display = 'none';
+        storyImage.style.display = 'block';
+    };
+
+
+storyImage.src = responseData.image_url;
+
+            // Manually set the carousel to the first item
+            storyCarousel.to(0);
+        })
+.catch(error => {
+        // Handle error here
+        console.error('Error:', error);
+        loader.style.display = 'none';
+
+        // Show placeholder text on error
+        const storyCarouselInner = document.getElementById('story-carousel-inner');
+        storyCarouselInner.innerHTML = '<p style="text-align: center; font-size: 20px;">Error loading story. Make sure the inputs doesnot include text that violates safety protocol. Please try again.</p>';
+    });
+    });
+});
+</script>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0VDYTH3PSK"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-0VDYTH3PSK');
+</script>
+
+
+
+
+</head>
+<body>
+
+ <div id="container">
+        <!-- Updated input and output height to 70% of page height -->
+        <div id="input-section">
+            <input id="character-input" type="text" placeholder="Character">
+            <input id="setting-input" type="text" placeholder="Situation">
+             <select id="style-dropdown">
+        <option value="fantasy">Fantasy</option>
+        <option value="action">Action</option>
+        <option value="Rhyme">Rhyme</option>
+        <option value="humor">Humor</option>
+        <option value="mystery">Mystery</option>
+    </select>
+            <select id="age-dropdown">
+        <option value="0-1 years old">0-1 yrs</option>
+        <option value="1-2 years old">1-2 yrs</option>
+        <option value="2-5 years old">2-5 yrs</option>
+    </select>
+            <button id="weave-button">Weave Story</button>
+        </div>
+        <div id="output-section" >
+            <div id="output-header">
+                <!-- Updated dynamic title -->
+                <div id="dynamic-title"></div>
+            </div>
+           <div id="output-check">
+            <div id="story-carousel" class="carousel slide" data-ride="carousel">
+            <div id="loader" class="loader"></div>
+                <div id="story-carousel-inner" class="carousel-inner">
+                </div>
+                <a class="carousel-control-prev" href="#story-carousel" role="button" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="sr-only">Previous</span>
+                </a>
+                <a class="carousel-control-next" href="#story-carousel" role="button" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="sr-only">Next</span>
+                </a>
+            </div>
+<div id="image-container">
+     <img id="image-placeholder" src="../static/background.jpeg" alt="Placeholder Image">
+    <img id="story-image" style="display: none;" alt="Generated image" onload="onImageLoad()">
+
+
+</div>
+</div>
+        </div>
+    </div>
+</body>
+</html>
