@@ -7,7 +7,7 @@ app = Flask(__name__)
 # Set your OpenAI GPT-3.5 Turbo API key
 
 client = OpenAI(
-  api_key='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',  # this is also the default, it can be omitted
+  api_key='Your API Key',  # this is also the default, it can be omitted
 )
 
 
